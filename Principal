@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>MMC - Nivel 1: Escape de Patrion</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #0a0a0a;
+            color: #00ff00;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #1a1a1a;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+        }
+        #scene-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        #scene-description {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        #actions {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #003300;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            font-size: 14px;
+            margin: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #006600;
+        }
+        #inventory {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #333;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+        #health {
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            background-color: #333;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+        }
+        .highlight {
+            color: #00cc00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="inventory">Inventario: <span id="inventory-list"></span></div>
+        <div id="health">Salud: <span id="health-value">100</span> | Escudo: <span id="shield-value">0</span></div>
+        <div id="scene-title"></div>
+        <div id="scene-description"></div>
+        <div id="actions"></div>
+    </div>
+
+    <script>
+        // Estado del juego
+        let gameState = {
+            inventory: [],
+            health: 100,
+            shield: 0,
+            hasMagus: false,
+            choseWeapons: false,
+            choseReactor: false,
+            arteryPicked: false,
+            magusHelped: false,
+            prisonersReleased: false,
+            anyaChoice: null
+        };
+
+        // Funciones auxiliares
+        function updateInventory() {
+            document.getElementById('inventory-list').innerText = gameState.inventory.join(', ') || 'Vacío';
+        }
+
+        function updateHealth() {
+            document.getElementById('health-value').innerText = gameState.health;
+            document.getElementById('shield-value').innerText = gameState.shield;
+        }
+
+        function setScene(title, description, actions) {
+            document.getElementById('scene-title').innerText = title;
+            document.getElementById('scene-description').innerHTML = description;
+            document.getElementById('actions').innerHTML = actions.map(action => 
+                `<button onclick="${action.func}()">${action.text}</button>`
+            ).join('');
+        }
+
+        // Escenas del juego
+        function cinematicIntro() {
+            setScene(
+                'Cinemática de Inicio',
+                '<p>La pantalla se oscurece. Un hombre de entre 50 y 60 años, el <span class="highlight">alguacil del tiempo</span>, jadea mientras intenta protegerse de un láser mortal; en su muñeca lleva un dispositivo metálico con un orbe luminoso: el <span class="highlight">Omnidex</span>. El atacante, de espaldas, joven y con un traje futurista, dispara un rayo. La gema en su cuello brilla mientras el láser impacta. Antes de desintegrarse, el alguacil emite un grito y una luz blanca surge del Omnidex, envolviéndolo. Su cuerpo se fractura en mil fragmentos de luz, colapsando en un oscuro vacío.</p>',
+                [{ text: 'Continuar', func: 'proceedToRoom' }]
+            );
+        }
+
+        function proceedToRoom() {
+            setScene(
+                'Habitación de J.P.',
+                '<p>Jean Pyers (J.P.), de 14 años, está en su habitación con un amigo. Hay pósters de videojuegos y componentes electrónicos desordenados, con <span class="highlight">parpadeos extraños</span> en los objetos.</p><p>J.P.: "Quiero crear un juego con historias reales, mundos vivos, no solo disparos."</p><p>Compañero: (burlón) "¿Por qué no juegas Call of Nite como todos los mortales?"</p><p>El compañero se levanta y se va, diciendo: "Tengo cosas que hacer."</p>',
+                [
+                    { text: 'Hablar con el compañero', func: 'talkToCompanion' },
+                    { text: 'Encender el PC', func: 'startPC' }
+                ]
+            );
+        }
+
+        function talkToCompanion() {
+            document.getElementById('scene-description').innerHTML += '<p>J.P.: "¿Qué opinas de mi idea?"</p><p>Compañero: "Aburrida. Prefiero acción."</p>';
+        }
+
+        function startPC() {
+            setScene(
+                'Transición',
+                '<p>J.P. enciende su PC. El motor de juegos se cuelga, y una <span class="highlight">luz azulada</span> emana del equipo, intensificándose. Los objetos se disuelven en sombras. Solo queda J.P., iluminado por la pantalla, en un vacío oscuro. El escritorio reaparece con un ícono: "MMC". Lo abre.</p><p>El juego muestra "Jugar" y "Salir". J.P. pulsa "Jugar". Una mano quemada surge de la pantalla, y el alguacil multiversal habla: "Jean Pyers..."</p><p>Tras un destello, el alguacil aparece: "Soy del futuro. Evitaré una catástrofe que tú provocarás."</p>',
+                [{ text: 'Continuar', func: 'sheriffDialogue' }]
+            );
+        }
+
+        function sheriffDialogue() {
+            setScene(
+                'Encuentro con el Alguacil',
+                '<p>Alguacil: "Tu padre no es quien crees. Es líder de una facción corrupta. Te usará para abrir una puerta prohibida."</p><p>J.P.: "¿Mi padre? ¡Es camionero!"</p><p>Alguacil: "Eso es una simulación de mi infancia. Tócame para que me una a ti."</p><p>J.P. toca el orbe brillante que se forma. Se adhiere a su muñeca como el <span class="highlight">Omnidex</span>, y la oscuridad lo envuelve.</p>',
+                [{ text: 'Despertar', func: 'cellScene' }]
+            );
+        }
+
+        function cellScene() {
+            setScene(
+                'Celda en Patrion',
+                '<p>J.P. despierta en una celda sucia, con esposas y un camastro. Un holograma dice: "Detención: Indefinida".</p><p>Omnidex: "Estación Patrion, sección de detención. Debemos escapar."</p>',
+                [
+                    { text: 'Examinar camastro', func: 'examineBed' },
+                    { text: 'Examinar paredes', func: 'examineWalls' },
+                    { text: 'Examinar panel LCD', func: 'examinePanel' }
+                ]
+            );
+        }
+
+        function examineBed() {
+            if (!gameState.inventory.includes('varilla metálica')) {
+                gameState.inventory.push('varilla metálica');
+                document.getElementById('scene-description').innerHTML += '<p>Encuentras una <span class="highlight">varilla metálica</span> rota bajo el colchón.</p>';
+                updateInventory();
+            } else {
+                document.getElementById('scene-description').innerHTML += '<p>Ya tienes la varilla metálica.</p>';
+            }
+        }
+
+        function examineWalls() {
+            document.getElementById('scene-description').innerHTML += '<p>Rayadas con grafitis: "El Rey nos observa", "No hay escapatoria".</p>';
+        }
+
+        function examinePanel() {
+            let desc = '<p>El panel cruje y cae, revelando una caja de fusibles. ';
+            if (gameState.inventory.includes('varilla metálica')) {
+                desc += 'Usas la varilla para abrirla. Cae una <span class="highlight">arteria reseca</span>.</p>';
+                setScene(
+                    'Celda en Patrion',
+                    desc,
+                    [
+                        { text: 'Recoger arteria', func: 'pickArtery' },
+                        { text: 'Dejar arteria', func: 'leaveArtery' }
+                    ]
+                );
+            } else {
+                desc += 'Necesitas algo para abrirla.</p>';
+                document.getElementById('scene-description').innerHTML += desc;
+            }
+        }
+
+        function pickArtery() {
+            gameState.inventory.push('arteria reseca');
+            gameState.arteryPicked = true;
+            updateInventory();
+            proceedToHallway();
+        }
+
+        function leaveArtery() {
+            gameState.arteryPicked = false;
+            proceedToHallway();
+        }
+
+        function proceedToHallway() {
+            setScene(
+                'Pasillo Central (Sigilo)',
+                '<p>Un pasillo largo con luces parpadeantes. Omnidex: "Sé sigiloso, hay guardias."</p><p>Ves a Magus, un reptil humanoide, en una celda. "Humanito, ¿escapas? Ayúdame y te ayudo."</p>',
+                [
+                    { text: 'Hablar con Magus', func: 'talkToMagus' },
+                    { text: 'Avanzar sigilosamente', func: 'stealthMove' }
+                ]
+            );
+        }
+
+        function talkToMagus() {
+            let desc = '<p>Magus: "Dame algo para la bestia de enfrente y distraeré al guardia."</p>';
+            let actions = [];
+            if (gameState.inventory.includes('arteria reseca')) {
+                actions.push({ text: 'Darle arteria', func: 'giveArtery' });
+            }
+            actions.push({ text: 'No ayudar', func: 'stealthMove' });
+            document.getElementById('scene-description').innerHTML += desc;
+            document.getElementById('actions').innerHTML = actions.map(action => 
+                `<button onclick="${action.func}()">${action.text}</button>`
+            ).join('');
+        }
+
+        function giveArtery() {
+            gameState.inventory = gameState.inventory.filter(item => item !== 'arteria reseca');
+            gameState.magusHelped = true;
+            updateInventory();
+            setScene(
+                'Pasillo Central',
+                '<p>Magus lanza la arteria a la bestia, silenciándola. "Espera mi señal." Grita, distrayendo al guardia.</p>',
+                [{ text: 'Aprovechar distracción', func: 'officeEntry' }]
+            );
+        }
+
+        function stealthMove() {
+            setScene(
+                'Sigilo en Pasillo',
+                '<p>Te escondes tras cajas. El guardia pasa cerca...</p>',
+                [
+                    { text: 'Moverse ahora', func: 'moveNow' },
+                    { text: 'Esperar', func: 'waitGuard' }
+                ]
+            );
+        }
+
+        function moveNow() {
+            if (Math.random() < 0.5) {
+                gameState.health -= 20;
+                updateHealth();
+                setScene(
+                    'Detectado',
+                    '<p>El guardia te ve y te golpea (-20 salud). Vuelves a la celda.</p>',
+                    [{ text: 'Intentar de nuevo', func: 'proceedToHallway' }]
+                );
+            } else {
+                officeEntry();
+            }
+        }
+
+        function waitGuard() {
+            officeEntry();
+        }
+
+        function officeEntry() {
+            setScene(
+                'Oficina de Administración',
+                '<p>Entras en una oficina. Un guardia revisa papeles. Omnidex: "Prueba el <span class="highlight">Omnirayo</span>."</p>',
+                [
+                    { text: 'Atacar con Omnirayo', func: 'fightGuard' },
+                    { text: 'Esconderse', func: 'hideInOffice' }
+                ]
+            );
+        }
+
+        function fightGuard() {
+            gameState.inventory.push('tarjeta de acceso');
+            updateInventory();
+            setScene(
+                'Victoria en Oficina',
+                '<p>Aturdes al guardia con el Omnirayo y lo derrotas. Obtienes una <span class="highlight">tarjeta de acceso</span>. Hay una palanca para liberar prisioneros.</p>',
+                [
+                    { text: 'Activar palanca', func: 'releasePrisoners' },
+                    { text: 'Seguir a almacén', func: 'warehouseEntry' }
+                ]
+            );
+        }
+
+        function hideInOffice() {
+            if (Math.random() < 0.3) {
+                fightGuard();
+            } else {
+                gameState.health -= 10;
+                updateHealth();
+                setScene(
+                    'Detectado',
+                    '<p>El guardia te encuentra (-10 salud).</p>',
+                    [{ text: 'Luchar', func: 'fightGuard' }]
+                );
+            }
+        }
+
+        function releasePrisoners() {
+            gameState.prisonersReleased = true;
+            if (gameState.magusHelped) {
+                gameState.hasMagus = true;
+                setScene(
+                    'Caos en Pasillo',
+                    '<p>Activas la palanca. Las celdas se abren, excepto la de Magus y la bestia. Liberas a Magus con la tarjeta. "Te sigo, cachorro."</p>',
+                    [{ text: 'Avanzar al almacén', func: 'warehouseEntry' }]
+                );
+            } else {
+                setScene(
+                    'Caos en Pasillo',
+                    '<p>Activas la palanca. Prisioneros luchan contra guardias, creando caos.</p>',
+                    [{ text: 'Aprovechar distracción', func: 'warehouseEntry' }]
+                );
+            }
+        }
+
+        function warehouseEntry() {
+            let desc = '<p>Llegas al almacén. Guardias te esperan.';
+            if (gameState.hasMagus) {
+                desc += ' Magus: "Prepárate, cachorro."</p>';
+            } else {
+                desc += '</p>';
+            }
+            setScene(
+                'Zona de Almacén',
+                desc,
+                [
+                    { text: 'Luchar', func: 'fightWarehouse' },
+                    { text: 'Decidir siguiente paso', func: 'decisionPoint' }
+                ]
+            );
+        }
+
+        function fightWarehouse() {
+            gameState.health -= gameState.hasMagus ? 10 : 20;
+            updateHealth();
+            decisionPoint();
+        }
+
+        function decisionPoint() {
+            setScene(
+                'Decision Crucial',
+                '<p>Omnidex: "Podemos desactivar las armas o destruir el reactor. ¿Qué eliges?"</p>',
+                [
+                    { text: 'Desactivar armas', func: 'weaponsPath' },
+                    { text: 'Destruir reactor', func: 'reactorPath' }
+                ]
+            );
+        }
+
+        function weaponsPath() {
+            gameState.choseWeapons = true;
+            setScene(
+                'Ruta de Armas',
+                '<p>Avanzas por un corredor con láseres. Debes esquivarlos.</p>',
+                [
+                    { text: 'Esquivar láseres', func: 'dodgeLasers' },
+                    { text: 'Disparar a torretas', func: 'shootTurrets' }
+                ]
+            );
+        }
+
+        function dodgeLasers() {
+            if (Math.random() < 0.7) {
+                hospitalZone();
+            } else {
+                gameState.health -= 15;
+                updateHealth();
+                setScene(
+                    'Golpeado',
+                    '<p>Un láser te alcanza (-15 salud).</p>',
+                    [{ text: 'Reintentar', func: 'weaponsPath' }]
+                );
+            }
+        }
+
+        function shootTurrets() {
+            hospitalZone();
+        }
+
+        function reactorPath() {
+            gameState.choseReactor = true;
+            setScene(
+                'Ruta del Reactor',
+                '<p>Desciendes por maquinaria inestable. Saltas entre engranajes.</p>',
+                [{ text: 'Saltar', func: 'jumpMachinery' }]
+            );
+        }
+
+        function jumpMachinery() {
+            if (Math.random() < 0.8) {
+                fightBoss();
+            } else {
+                gameState.health -= 20;
+                updateHealth();
+                setScene(
+                    'Caída',
+                    '<p>Caes y te dañas (-20 salud).</p>',
+                    [{ text: 'Reintentar', func: 'reactorPath' }]
+                );
+            }
+        }
+
+        function fightBoss() {
+            setScene(
+                'Guardián del Reactor',
+                '<p>Un robot masivo aparece. Omnidex: "¡Prepárate!"</p>',
+                [
+                    { text: 'Atacar con Omnirayo', func: 'attackBoss' },
+                    { text: 'Esquivar', func: 'dodgeBoss' }
+                ]
+            );
+        }
+
+        function attackBoss() {
+            gameState.health -= 10;
+            updateHealth();
+            hospitalZone();
+        }
+
+        function dodgeBoss() {
+            hospitalZone();
+        }
+
+        function hospitalZone() {
+            setScene(
+                'Zona Hospital',
+                '<p>Llegas a un hospital desolado. Magus está herido. Encuentras a un médico loco: "¡Monstruos en la morgue! Perdí mi tarjeta."</p>',
+                [
+                    { text: 'Ir a la morgue', func: 'morgueScene' },
+                    { text: 'Buscar botiquines', func: 'findMedkits' }
+                ]
+            );
+        }
+
+        function findMedkits() {
+            gameState.inventory.push('botiquín');
+            updateInventory();
+            morgueScene();
+        }
+
+        function morgueScene() {
+            gameState.inventory.push('tarjeta de acceso médica');
+            updateInventory();
+            setScene(
+                'Morgue',
+                '<p>Encuentras la <span class="highlight">tarjeta médica</span>. Una criatura cae del techo. Omnidex: "¡Atráela a la sala de extracción!"</p>',
+                [
+                    { text: 'Luchar', func: 'fightMonster' },
+                    { text: 'Atraer a extracción', func: 'lureMonster' }
+                ]
+            );
+        }
+
+        function fightMonster() {
+            gameState.health -= 15;
+            updateHealth();
+            document.getElementById('scene-description').innerHTML += '<p>La criatura se regenera. Necesitas otra estrategia.</p>';
+        }
+
+        function lureMonster() {
+            setScene(
+                'Eliminación',
+                '<p>Atraes al monstruo y activas la extracción. Es succionado y destruido.</p>',
+                [{ text: 'Curar a Magus', func: 'escapePath' }]
+            );
+        }
+
+        function escapePath() {
+            setScene(
+                'Zona de Embarque',
+                '<p>Anya aparece: "Jean, sabía que vendrías. Usa esta tarjeta para escapar." Guardias se acercan.</p>',
+                [{ text: 'Luchar con Anya', func: 'fightWithAnya' }]
+            );
+        }
+
+        function fightWithAnya() {
+            setScene(
+                'Traición',
+                '<p>Anya lanza gas neurotóxico. "Lo siento, Jean. El Rey tiene un plan." Destruye las cápsulas.</p>',
+                [
+                    { text: 'Desactivarla (no letal)', func: 'disableAnya' },
+                    { text: 'Atacarla (letal)', func: 'killAnya' }
+                ]
+            );
+        }
+
+        function disableAnya() {
+            gameState.anyaChoice = 'no letal';
+            setScene(
+                'Desactivación',
+                '<p>Aturdes a Anya y rompes el artefacto en su cuello. "Jean... detén al Rey..." Te da la verdadera tarjeta.</p>',
+                [{ text: 'Escapar', func: 'finalEscape' }]
+            );
+        }
+
+        function killAnya() {
+            gameState.anyaChoice = 'letal';
+            setScene(
+                'Muerte de Anya',
+                '<p>Derrotas a Anya mortalmente. Encuentras la tarjeta entre sus restos.</p>',
+                [{ text: 'Escapar', func: 'finalEscape' }]
+            );
+        }
+function finalEscape() {
+            let ending = '<p>Subes a la cápsula y despegas.';
+            if (gameState.choseReactor) {
+                ending += ' Un misil golpea la cápsula, pero logras estabilizarla.';
+            }
+            ending += ' Omnidex: "Señal de socorro desde un planeta cercano. ¿Investigamos?"</p>';
+            setScene(
+                'Escape Final',
+                ending,
+                [{ text: 'Fin del Nivel 1', func: 'endGame' }]
+            );
+        }
+function endGame() {
+            setScene(
+                'Fin del Nivel 1',
+                '<p>La cápsula aterriza forzosamente en el planeta. Pantalla a negro. ¡Nivel 1 completado!</p>',
+                []
+            );
+        }
+
+        // Iniciar juego
+        cinematicIntro();
+        updateInventory();
+        updateHealth();
+    </script>
+</body>
+</html>
